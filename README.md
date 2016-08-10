@@ -2,7 +2,7 @@
 ----
 
 ## Description
-Built implementing youtube_dl as a library in Python to download download vids and convert them to .mp3 including vid thumbnail and metadata. When downloading vids
+Built implementing youtube_dl as a library in Python to download vids and convert them to .mp3 including vid thumbnail and metadata. When downloading vids
 from a playlist it'll keep track of indices of vids downloaded from specific playlist and write them in a dictionary to the
 following file: 
 >./downloads/[playlist\_title]/.\_dl\_history.txt
