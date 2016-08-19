@@ -1,5 +1,7 @@
 # Ignore personal downloaded files
 downloads/
+yt_dl_music/
+extracted_info.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

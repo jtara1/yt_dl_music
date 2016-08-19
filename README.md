@@ -63,4 +63,5 @@ examples:
     TODO:
         1. Add functionality to prioritize using indices_to_download or '_dl_history.txt' as playlist indices to download
         2. Import ydl_opts as a parameter from a file
+        3. Add support to touch file when non playlist is passed
     '''

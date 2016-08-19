@@ -92,13 +92,13 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
     TODO:
         1. Add functionality to prioritize using indices_to_download or '_dl_history.txt' as playlist indices to download
         2. Import ydl_opts as a parameter from a file
+        3. Add support to touch file when non playlist is passed
     '''
     
     playlist_title = ''
     file_log = '._dl_history.txt' # files that start with '.' seem to be hidden on linux-distros
     last_dl_index = indices_to_download[0]
     end_dl_index = indices_to_download[1]
-    vids_downloaded = [] # contains title of videos downloaded
     
     # youtube_dl, uncertain of playlist title & at what index to start downloading so no options passed in parameter
     ydl = youtube_dl.YoutubeDL()
@@ -181,8 +181,8 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
         with open(os.getcwd() + '/extracted_info.txt', 'w') as f:
             f.write(str(extract_info))
     
-    # update history log or touch files
-    if is_playlist and (keep_history or (touch_files and os.name == 'posix')):
+    # update history log or call commmand touch on dl files
+    if is_playlist and (keep_history or (touch_files and (os.name == 'posix' or os.name == 'mac'))):
         indices = history_downloads[playlist_title][u'downloaded_indices']
         history_downloads[playlist_title]['playlist_size'] = len(extract_info[u'entries'])
         for vid in extract_info[u'entries']:
@@ -191,9 +191,10 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
                     indices.append(vid[u'playlist_index'])
                 if touch_files:
                     call(['touch', os.path.join(dir_downloads_playlist, vid[u'title'] + '.' + preferredcodec)]) # call command 'touch [VID_FILE_PATH]'              
+        if keep_history:
+            historyLog2(dir_downloads_playlist, file_log, 'write', history_downloads)            
         if debug:
             print('INDICES:\n' + str(indices))
-        historyLog2(dir_downloads_playlist, file_log, 'write', history_downloads)            
 
         
 if __name__ == '__main__':
