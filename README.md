@@ -31,29 +31,33 @@ By keeping track of this info, yt\_dl\_music avoids downloading the same videoes
 ## Usage
 call main(...) function with url of playlist/vid you wish to download
 
-example:
+examples:
 
     if __name__ == "__main__":
-        main('https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_')
+        url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
+        main(url)
+        main(url, dir_downloads='/home/user/Downloads', keep_history=True, touch_files=True, debug=True)
 
 ----
 ## main(...) docstring
     '''
     DESCRIPTION:
         Utilizes youtube_dl to download vids from playlists and convert each to an .mp3 with vid thumbnail and metadata attached
-        Downloads 'vids to ./downloads/'
-        Downloads vids of playlist to './downloads/[playlist_title]/'
-        Tested & working with Youtube playlists and individual Youtube videoes
-        Note: If info on last videoes download for playlist from url_download exists in './downloads/[playlist_title]/._dl_history.txt' then
+        Downloads vids to dir_downloads/"downloads"/
+        Downloads vids of playlist to dir_download/"downloads"/playlist_title/
+        Tested & working with Youtube playlists and individual Youtube videos
+        Note: If info on last videos download for playlist from url_download exists in './downloads/[playlist_title]/._dl_history.txt' then
             this takes priority over indices_to_download parameter
     PARAMETERS:
         url_download:         string  - url to download, any video url should work with youtube-dl (only tested youtube vids here)
+        dir_downloads:        string  - directory to download to, creates (if not avail) dir_downloads folder
         indices_to_download:  list    - [start_index, stop_index], 1 is the 1st index in YT playlist, -1 or None means the the last index of the playlist
         keep_history:         boolean - if True and if playlist is downloaded, then the program writes the index of last video downloads
+        touch_files:          boolean - update modified date of vid file if True and os.name=='posix'
         debug:                boolean - if True prints messages and saves an extra file in root dir of this file
     TODO-TESTS:
         0. Test and attempt to create a cron job to run this daily and download undownloaded vids to convert to .mp3
-        1a. Do more testing with youtube videoes and playlists
+        1a. Do more testing with youtube videos and playlists
         1b. Test and add functionality for other sites (specifically saving history logs)
         1c. Test indices_to_download parameter, check YoutubeDL.py for more info
     TODO:

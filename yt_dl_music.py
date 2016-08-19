@@ -36,24 +36,7 @@ def my_hook(d):
     '''
 #    print (d) # debug - can be used to extract percentage or bytes of file downloaded or time spent downloading or check if download finished
     if d['status'] == 'finished':
-        print('Done downloading, now converting ...')
-        
-        
-def historyLog(wdir, mode = 'read', msg = ''):
-    with open(wdir + 'log.txt', 'a') as f:
-        if mode == 'read':
-            txt = f.readline()
-            if txt == '':
-                index = 1
-            else:
-                index = int(txt)
-#            print ('index: ' + index)
-            return index 
-        elif mode == 'write':
-            f.seek(0)
-            f.write(msg)
-            return int(msg)
-            
+        print('Done downloading, now converting ...')            
 
 def historyLog2(wdir, file_log, mode='read', output={}):
     '''
