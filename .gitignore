@@ -1,6 +1,7 @@
 # Ignore personal downloaded files
 yt_dl_music/
 extracted_info.txt
+my_hook.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
