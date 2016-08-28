@@ -6,7 +6,7 @@ The youtube-dl library will avoid downloading a file if a file with the same nam
 
 When downloading vids from a playlist it'll keep track of indices of vids downloaded from specific playlist and write them in a dictionary to the
 following file: 
->./downloads/[playlist\_title]/.\_dl\_history.txt
+>./[playlist\_title]/.\_dl\_history.txt
 
 The content of .\_dl\_history.txt will look something like this:
 
