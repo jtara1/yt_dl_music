@@ -1,5 +1,4 @@
 # yt\_dl\_music (Youtube Download Music)
-----
 
 ## Description
 Built implementing youtube_dl as a library in Python to download vids and convert them to .mp3 including vid thumbnail and metadata.
