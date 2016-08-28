@@ -3,7 +3,7 @@
 Created on Sat Aug  6 12:31:16 2016
 
 author: jtara1 (github)
-OS: Linux Ubuntu 16.04, should work on all OS's, needs testing
+OS: Linux, should work on all OS's, needs testing
 Python 2.7
 
 """
@@ -16,6 +16,10 @@ import colorama # supports cross platform, used to add color to text printed to 
 colorama.init()
 #from termcolor import colored # dont think this supports cross-platform
 
+
+class YoutubeDownloadMusicException(Exception):
+    def __init__(self, msg = False):
+        self.msg = msg
 
 class MyLogger(object):
     # the following functions will print same messages printed in cli of youtube-cli    
@@ -35,6 +39,8 @@ def my_hook(d):
         Upon completion of download of a video, print string
     '''
 #    print (d) # debug - can be used to extract percentage or bytes of file downloaded or time spent downloading or check if download finished
+#    with open('my_hook.txt', 'w') as f:
+#        f.write(d)
     if d['status'] == 'finished':
         print('Done downloading, now converting ...')            
 
@@ -72,27 +78,25 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
     '''
     DESCRIPTION:
         Utilizes youtube_dl to download vids from playlists and convert each to an .mp3 with vid thumbnail and metadata attached
-        Downloads vids to dir_downloads/"downloads"/
-        Downloads vids of playlist to dir_download/"downloads"/playlist_title/
+        Downloads vids to dir_downloads
+        Downloads vids of playlist to dir_download/playlist_title/
         Tested & working with Youtube playlists and individual Youtube videos
         Note: If info on last videos download for playlist from url_download exists in './downloads/[playlist_title]/._dl_history.txt' then
             this takes priority over indices_to_download parameter
     PARAMETERS:
         url_download:         string  - url to download, any video url should work with youtube-dl (only tested youtube vids here)
         dir_downloads:        string  - directory to download to, creates (if not avail) dir_downloads folder
-        indices_to_download:  list    - [start_index, stop_index], 1 is the 1st index in YT playlist, -1 or None means the the last index of the playlist
-        keep_history:         boolean - if True and if playlist is downloaded, then the program writes the index of last video downloads
+        indices_to_download:  list    - [start_index, stop_index], 1 is the 1st vid in YT playlist, -1 or None means the the last index of the playlist
+        keep_history:         boolean - if playlist is downloaded, then the program writes the indices video(s) downloaded to '._dl_history.txt'
         touch_files:          boolean - update modified date of vid file if True and os.name=='posix'
-        debug:                boolean - if True prints messages and saves an extra file in root dir of this file
+        debug:                boolean - prints messages and saves an extra file in same folder of this file
     TODO-TESTS:
-        0. Test and attempt to create a cron job to run this daily and download undownloaded vids to convert to .mp3
-        1a. Do more testing with youtube videos and playlists
-        1b. Test and add functionality for other sites (specifically saving history logs)
-        1c. Test indices_to_download parameter, check YoutubeDL.py for more info
+        1. Test and add functionality for other sites (specifically saving history logs)
+        2. Test indices_to_download parameter, check YoutubeDL.py for more info
     TODO:
-        1. Add functionality to prioritize using indices_to_download or '_dl_history.txt' as playlist indices to download
-        2. Import ydl_opts as a parameter from a file
-        3. Add support to touch file when non playlist is passed
+        1. Import ydl_opts as a parameter from a file
+        2. Add cli
+        3. Allow single video to have "touch" command called on it.
     '''
     
     playlist_title = ''
@@ -115,7 +119,8 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
         print('PLAYLIST_TITLE: ' + playlist_title) # debug
 
     # local variables for directories
-    dir_downloads_root = os.path.join(dir_downloads, 'yt_dl_music')
+#    dir_downloads_root = os.path.join(dir_downloads, 'yt_dl_music')
+    dir_downloads_root = dir_downloads
     dir_downloads_playlist = os.path.join(dir_downloads_root, playlist_title) # by default, playlist_title = ''
     
     if debug:
@@ -151,11 +156,11 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
     ydl_opts = {
         'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
         'usetitle': True,
-        'writethumbnail': True, # needed if using postprocessing EmbedThumbnail
+        'writethumbnail': True,             # needed if using postprocessing EmbedThumbnail
         'playliststart': last_dl_index + 1, # we don't want to re-download the last vid we downloaded so increment this by 1
-        'playlistend': end_dl_index,
-        'format': 'bestaudio/best',
-        'ignoreerrors': True, # allows continuation after errors such as Download Failed from deleted or removed videos
+        'playlistend': end_dl_index,        # stop downloading at this index
+        'format': 'bestaudio/best',         
+        'ignoreerrors': True,               # allows continuation after errors such as Download Failed from deleted or removed videos
         'postprocessors': [
             {
             'key': 'FFmpegExtractAudio',            
@@ -163,10 +168,10 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
             'preferredquality': '192',
             },
             {
-            'key': 'EmbedThumbnail',            
+            'key': 'EmbedThumbnail', # embed thumbnail in file
             },
             {
-            'key': 'FFmpegMetadata',
+            'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
             }
         ],
         'logger': MyLogger(),
@@ -174,15 +179,19 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
     }
 
     # update params to ydl_opts set above, and extract info about video(es) and download them
-    ydl.__init__(params = ydl_opts)
-    extract_info = ydl.extract_info(url_download, download=True)
+#    ydl = youtube_dl.YoutubeDL(ydl_opts)
+    try:
+        ydl.__init__(params = ydl_opts)
+        extract_info = ydl.extract_info(url_download, download=True)
+    except Exception as e:
+        print(e.msg)
 
     if debug:    
         with open(os.getcwd() + '/extracted_info.txt', 'w') as f:
             f.write(str(extract_info))
     
     # update history log or call commmand touch on dl files
-    if is_playlist and (keep_history or (touch_files and (os.name == 'posix' or os.name == 'mac'))):
+    if is_playlist and (keep_history or (touch_files and (os.name == 'posix' or os.name == 'mac'))) and extract_info:
         indices = history_downloads[playlist_title][u'downloaded_indices']
         history_downloads[playlist_title]['playlist_size'] = len(extract_info[u'entries'])
         for vid in extract_info[u'entries']:
@@ -201,5 +210,5 @@ if __name__ == '__main__':
     # enter your url into main function below and check main docstring for more info on parameters and functionality
     # jtara1's test playlist, for testing purposes, these vids are short (< 1min) and the 2nd of the 3 vids has been deleted
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    dir_dl_jtara1 = '/home/j/Downloads/'
+    dir_dl_jtara1 = '/home/j/Downloads/yt_dl_music'
     main(url, debug=True)
