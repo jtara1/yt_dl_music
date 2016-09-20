@@ -12,25 +12,37 @@ from __future__ import unicode_literals
 from subprocess import call
 import youtube_dl
 import os
+import sys
+import logging
+import json
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
 #from termcolor import colored # dont think this supports cross-platform
 
 
 class YoutubeDownloadMusicException(Exception):
+    """Raised when youtube-dl module throws an exception"""
     def __init__(self, msg = False):
         self.msg = msg
 
+
+class WrongDataException(Exception):
+    """Raised when data is not what we expected"""
+    def __init__(self, data, message):
+        self.data = data
+        self.message = message
+
 class MyLogger(object):
-    # the following functions will print same messages printed in cli of youtube-cli    
+    # the following functions will print same messages printed in cli of youtube-cli
     def debug(self, msg):
         print (colorama.Fore.BLUE + msg + colorama.Style.RESET_ALL)
-        
+
     def warning(self, msg):
         print (colorama.Fore.YELLOW + msg + colorama.Style.RESET_ALL)
-        
+
     def error(self, msg):
         print (colorama.Fore.RED + msg + colorama.Style.RESET_ALL)
+
 
 def my_hook(d):
     '''
@@ -42,39 +54,43 @@ def my_hook(d):
 #    with open('my_hook.txt', 'w') as f:
 #        f.write(d)
     if d['status'] == 'finished':
-        print('Done downloading, now converting ...')            
+        print('Done downloading, now converting ...')
 
-def historyLog2(wdir, file_log, mode='read', output={}):
-    '''
-    DESCRIPTION:
-        1. if mode == 'read' then it tries to read the file, file_log located in wdir returning a dictionary of the text
-            if that fails, it returns an emtpy dictionary
-        2. elif mode == 'write' it creates (or overwrites) the file, file_log, located in wdir with the data from output
-        This function does not check if wdir is valid or create wdir
-        This function does not create the file, file_log if mode == 'read'
-    PARAMETERS:
-        wdir:     string - directory to save to
-        file_log: string - file to save to
-        mode:     string - 'read' or 'write', see description above
-        output:   any    - only relevant if mode == 'write', output is converted to string and written to file_log
-    '''
-    if mode == 'read':    
-        try:
-            with open(os.path.join(wdir, file_log), 'r') as f:
-                data = f.read()    
-                return eval(data)
-        except IOError:
-                return {}
-    elif mode == 'write':
-        with open(os.path.join(wdir, file_log), 'w') as f:
-            f.write(str(output))
-            return True
+
+def history_log(wdir=os.getcwd(), log_file='log_file.txt', mode='read', write_data=None):
+    """Read python dictionary from or write python dictionary to a file
+
+    :param wdir: directory for text file to be saved to
+    :param log_file: name of text file (include .txt extension)
+    :param mode: 'read', 'write', or 'append' are valid
+    :param write_data: data that'll get written in the log_file
+    :type write_data: dictionary (or list or set)
+
+    :return: returns data read from or written to file (depending on mode)
+    :rtype: dictionary
+
+    .. note:: Big thanks to https://github.com/rachmadaniHaryono for helping cleanup & fix security of this function.
+    """
+    mode_dict = {
+        'read': 'r',
+        'write': 'w',
+        'append': 'a'
+    }
+    if mode in mode_dict:
+        with open(os.path.join(wdir, log_file), mode_dict[mode]) as f:
+            if mode == 'read':
+                return json.loads(f.read())
+            else:
+                f.write(json.dumps(write_data))
+                return write_data
     else:
-        print (colorama.Fore.RED + 'Error in historyLog2 func: invalid mode' + colorama.Style.RESET_ALL)
-        return False
-            
+        logging.error('history_log func: invalid mode (param #3)')
+        return {}
 
-def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1], keep_history = True, touch_files = True, debug = False):
+
+
+def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
+        keep_history=True, touch_files=True, debug=False):
     '''
     DESCRIPTION:
         Utilizes youtube_dl to download vids from playlists and convert each to an .mp3 with vid thumbnail and metadata attached
@@ -98,23 +114,33 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
         2. Add cli
         3. Allow single video to have "touch" command called on it.
     '''
-    
+
+    py_version = sys.version_info[0]
+
     playlist_title = ''
     file_log = '._dl_history.txt' # files that start with '.' seem to be hidden on linux-distros
     last_dl_index = indices_to_download[0]
     end_dl_index = indices_to_download[1]
-    
+
+    # create logger
+    logging.basicConfig(filename='log.txt')
+    _log = logging.getLogger('yt_dl_music')
+
     # youtube_dl, uncertain of playlist title & at what index to start downloading so no options passed in parameter
     ydl = youtube_dl.YoutubeDL()
     extract_info = ydl.extract_info(url_download, download=False, process=False) # process=False just gives playlist info without each individual video info included
-    
+
+    if debug:
+        with open('extracted_info.txt', 'w') as f:
+            f.write(str(extract_info))
+
     # determines if link is_playlist, and gets playlist_title
     if extract_info[u'extractor'] == u'youtube:playlist':
         playlist_title = extract_info[u'title']
         is_playlist = True
     else:
         is_playlist = False
-    
+
     if debug:
         print('PLAYLIST_TITLE: ' + playlist_title) # debug
 
@@ -122,48 +148,88 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
 #    dir_downloads_root = os.path.join(dir_downloads, 'yt_dl_music')
     dir_downloads_root = dir_downloads
     dir_downloads_playlist = os.path.join(dir_downloads_root, playlist_title) # by default, playlist_title = ''
-    
+
     if debug:
         print('DIR_DOWNLOADS: ' + dir_downloads)
         print('DIR_DOWNLOADS_ROOT: ' + dir_downloads_root)
         print('DIR_DOWNLOADS_PLAYLIST: ' + dir_downloads_playlist)
-    
+
     # make directories if not already made
     if not os.path.isdir(dir_downloads_root):
         os.mkdir(dir_downloads_root)
     if not os.path.isdir(dir_downloads_playlist):
         os.mkdir(dir_downloads_playlist)
 
+    FailedToOpenError = FileNotFoundError if py_version == 3 else IOError
+
     # read the data from history log, if file does not exist, returns {}
     if is_playlist:
-        history_downloads = historyLog2(dir_downloads_playlist, file_log, 'read')
-        if not history_downloads == {}:
-            if history_downloads[playlist_title]['downloaded_indices']:
-                last_dl_index = history_downloads[playlist_title]['downloaded_indices'][-1]
-        else:
+        try:
+            update_history = False
+            # try to open the file
+            history_downloads = history_log(dir_downloads_playlist, file_log, 'read')
+
+            # check to see if the data loaded is a dictionary
+            if not isinstance(history_downloads, dict):
+                raise WrongDataException(history_downloads, 'Expected Python dictionary')
+
+            # try to get last download index
+            dl_indices = history_downloads[playlist_title]['downloaded_indices']
+            last_dl_index = int(dl_indices[-1])
+
+        except FailedToOpenError: # py3 & py2 errors for opening of dne file
             history_downloads = {
                 playlist_title: {
                     'downloaded_indices': [],
                     'playlist_size': 0,
-                },
+                }
             }
-                
+            update_history = True
+
+        except WrongDataException as e:
+            _log.error(e.message+'\n%s', e.data)
+            update_history = True
+
+        except KeyError as e:
+            if playlist_title in e.message:
+                _log.warn('%s loaded, but %s not found' % (file_log, playlist_title))
+                history_downloads[playlist_title] = {'downloaded_indices': []}
+            elif 'downloaded_indices' in e.message:
+                _log.warn('%s loaded, but downloaded_indices not found' % file_log)
+                history_downloads[playlist_title]['downloaded_indices'] = []
+            update_history = True
+
+        except IndexError:
+            _log.warn('%s loaded, but no most recent download index available, \
+                starting from beginning of playlist' % file_log)
+            update_history = True
+
+        except:
+            _log.critical('Unknown error in history checking')
+
+        if update_history:
+            last_dl_index = 0 # note: this value gets incremented by 1 later
+            history_downloads = history_log(dir_downloads_playlist, file_log,
+                                            'write', history_downloads)
+
     if debug:
+        print('last_dl_index: %i' % last_dl_index)
+        print('end_dl_index: %i' % end_dl_index)
         print ('HISTORY_DOWNLOADS:\n' + str(history_downloads) + '\n' + str(type(history_downloads)))
-        
+
     # check YoutubeDL.py in the youtube_dl library for more info
     preferredcodec = 'mp3'
     ydl_opts = {
         'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
         'usetitle': True,
         'writethumbnail': True,             # needed if using postprocessing EmbedThumbnail
-        'playliststart': last_dl_index + 1, # we don't want to re-download the last vid we downloaded so increment this by 1
+        'playliststart': last_dl_index + 1,
         'playlistend': end_dl_index,        # stop downloading at this index
-        'format': 'bestaudio/best',         
+        'format': 'bestaudio/best',
         'ignoreerrors': True,               # allows continuation after errors such as Download Failed from deleted or removed videos
         'postprocessors': [
             {
-            'key': 'FFmpegExtractAudio',            
+            'key': 'FFmpegExtractAudio',
             'preferredcodec': preferredcodec,
             'preferredquality': '192',
             },
@@ -186,12 +252,14 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
     except Exception as e:
         print(e.msg)
 
-    if debug:    
-        with open(os.getcwd() + '/extracted_info.txt', 'w') as f:
+    if debug:
+        with open(os.getcwd() + '/extracted_info2.txt', 'w') as f:
             f.write(str(extract_info))
-    
+
     # update history log or call commmand touch on dl files
-    if is_playlist and (keep_history or (touch_files and (os.name == 'posix' or os.name == 'mac'))) and extract_info:
+    if is_playlist and extract_info and (
+        keep_history or (touch_files and (os.name == 'posix' or os.name == 'mac'))):
+
         indices = history_downloads[playlist_title][u'downloaded_indices']
         history_downloads[playlist_title]['playlist_size'] = len(extract_info[u'entries'])
         for vid in extract_info[u'entries']:
@@ -199,16 +267,17 @@ def main(url_download, dir_downloads = os.getcwd(), indices_to_download = [0, -1
                 if keep_history:
                     indices.append(vid[u'playlist_index'])
                 if touch_files:
-                    call(['touch', os.path.join(dir_downloads_playlist, vid[u'title'] + '.' + preferredcodec)]) # call command 'touch [VID_FILE_PATH]'              
+                    call(['touch', os.path.join(dir_downloads_playlist, vid[u'title'] + '.' + preferredcodec)]) # call command 'touch [VID_FILE_PATH]'
         if keep_history:
-            historyLog2(dir_downloads_playlist, file_log, 'write', history_downloads)            
+            history_downloads[playlist_title]['downloaded_indices'] = indices
+            history_log(dir_downloads_playlist, file_log, 'write', history_downloads)
         if debug:
             print('INDICES:\n' + str(indices))
 
-        
+
 if __name__ == '__main__':
     # enter your url into main function below and check main docstring for more info on parameters and functionality
-    # jtara1's test playlist, for testing purposes, these vids are short (< 1min) and the 2nd of the 3 vids has been deleted
+    # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
     dir_dl_jtara1 = '/home/j/Downloads/yt_dl_music'
     main(url, debug=True)
