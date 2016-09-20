@@ -17,7 +17,12 @@ import logging
 import json
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
-#from termcolor import colored # dont think this supports cross-platform
+
+
+py_version = sys.version_info[0]
+
+logging.basicConfig(filename='log.txt')
+_log = logging.getLogger('yt_dl_music')
 
 
 class YoutubeDownloadMusicException(Exception):
@@ -87,7 +92,68 @@ def history_log(wdir=os.getcwd(), log_file='log_file.txt', mode='read', write_da
         logging.error('history_log func: invalid mode (param #3)')
         return {}
 
+def process_history_data(playlist_title, dir, file_log):
+    """Get data from file_log for tracking of indices downloaded of playlist or
+    update or create data in file_log
 
+    :param playlist_title: title of playlist
+    :param dir: directory file_log (& downloaded vids) will be / are located in
+    :param file_log: name of file containing data
+
+    :return: history_downloads (data), and last_dl_index (most recent download index)
+    :rtype: tuple
+    """
+
+    FailedToOpenError = FileNotFoundError if py_version == 3 else IOError
+    try:
+        update_history = False
+        # try to open the file
+        history_downloads = history_log(dir, file_log, 'read')
+
+        # check to see if the data loaded is a dictionary
+        if not isinstance(history_downloads, dict):
+            raise WrongDataException(history_downloads, 'Expected Python dictionary')
+
+        # try to get last download index
+        dl_indices = history_downloads[playlist_title]['downloaded_indices']
+        last_dl_index = int(dl_indices[-1])
+
+    except FailedToOpenError: # py3 & py2 errors for opening of dne file
+        history_downloads = {
+            playlist_title: {
+                'downloaded_indices': [],
+                'playlist_size': 0,
+            }
+        }
+        update_history = True
+
+    except WrongDataException as e:
+        _log.error(e.message+'\n%s', e.data)
+        update_history = True
+
+    except KeyError as e:
+        if playlist_title in e.message:
+            _log.warn('%s loaded, but %s not found' % (file_log, playlist_title))
+            history_downloads[playlist_title] = {'downloaded_indices': []}
+        elif 'downloaded_indices' in e.message:
+            _log.warn('%s loaded, but downloaded_indices not found' % file_log)
+            history_downloads[playlist_title]['downloaded_indices'] = []
+        update_history = True
+
+    except IndexError:
+        _log.warn('%s loaded, but no most recent download index available, \
+            starting from beginning of playlist' % file_log)
+        update_history = True
+
+    except Exception as e:
+        _log.critical('%s: %s' % (type(e), e))
+
+    if update_history:
+        last_dl_index = 0 # note: this value gets incremented by 1 later
+        history_downloads = history_log(dir, file_log,
+                                        'write', history_downloads)
+
+    return history_downloads, last_dl_index
 
 def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         keep_history=True, touch_files=True, debug=False):
@@ -115,16 +181,12 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         3. Allow single video to have "touch" command called on it.
     '''
 
-    py_version = sys.version_info[0]
+
 
     playlist_title = ''
     file_log = '._dl_history.txt' # files that start with '.' seem to be hidden on linux-distros
     last_dl_index = indices_to_download[0]
     end_dl_index = indices_to_download[1]
-
-    # create logger
-    logging.basicConfig(filename='log.txt')
-    _log = logging.getLogger('yt_dl_music')
 
     # youtube_dl, uncertain of playlist title & at what index to start downloading so no options passed in parameter
     ydl = youtube_dl.YoutubeDL()
@@ -160,57 +222,10 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     if not os.path.isdir(dir_downloads_playlist):
         os.mkdir(dir_downloads_playlist)
 
-    FailedToOpenError = FileNotFoundError if py_version == 3 else IOError
-
-    # read the data from history log, if file does not exist, returns {}
+    # get all data from file_log or create or update it
     if is_playlist:
-        try:
-            update_history = False
-            # try to open the file
-            history_downloads = history_log(dir_downloads_playlist, file_log, 'read')
-
-            # check to see if the data loaded is a dictionary
-            if not isinstance(history_downloads, dict):
-                raise WrongDataException(history_downloads, 'Expected Python dictionary')
-
-            # try to get last download index
-            dl_indices = history_downloads[playlist_title]['downloaded_indices']
-            last_dl_index = int(dl_indices[-1])
-
-        except FailedToOpenError: # py3 & py2 errors for opening of dne file
-            history_downloads = {
-                playlist_title: {
-                    'downloaded_indices': [],
-                    'playlist_size': 0,
-                }
-            }
-            update_history = True
-
-        except WrongDataException as e:
-            _log.error(e.message+'\n%s', e.data)
-            update_history = True
-
-        except KeyError as e:
-            if playlist_title in e.message:
-                _log.warn('%s loaded, but %s not found' % (file_log, playlist_title))
-                history_downloads[playlist_title] = {'downloaded_indices': []}
-            elif 'downloaded_indices' in e.message:
-                _log.warn('%s loaded, but downloaded_indices not found' % file_log)
-                history_downloads[playlist_title]['downloaded_indices'] = []
-            update_history = True
-
-        except IndexError:
-            _log.warn('%s loaded, but no most recent download index available, \
-                starting from beginning of playlist' % file_log)
-            update_history = True
-
-        except:
-            _log.critical('Unknown error in history checking')
-
-        if update_history:
-            last_dl_index = 0 # note: this value gets incremented by 1 later
-            history_downloads = history_log(dir_downloads_playlist, file_log,
-                                            'write', history_downloads)
+        history_downloads, last_dl_index = \
+            process_history_data(playlist_title, dir_downloads_playlist, file_log)
 
     if debug:
         print('last_dl_index: %i' % last_dl_index)
