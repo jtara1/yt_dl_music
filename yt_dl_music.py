@@ -118,6 +118,7 @@ def process_history_data(playlist_title, dir, file_log):
         dl_indices = history_downloads[playlist_title]['downloaded_indices']
         last_dl_index = int(dl_indices[-1])
 
+    # file_log does not exist, create a new one with initial data
     except FailedToOpenError: # py3 & py2 errors for opening of dne file
         history_downloads = {
             playlist_title: {
@@ -127,10 +128,12 @@ def process_history_data(playlist_title, dir, file_log):
         }
         update_history = True
 
+    # data loaded from file does not match expected type
     except WrongDataException as e:
         _log.error(e.message+'\n%s', e.data)
         update_history = True
 
+    # either playlist_title or 'downloaded_indices' not found
     except KeyError as e:
         if playlist_title in e.message:
             _log.warn('%s loaded, but %s not found' % (file_log, playlist_title))
@@ -140,11 +143,13 @@ def process_history_data(playlist_title, dir, file_log):
             history_downloads[playlist_title]['downloaded_indices'] = []
         update_history = True
 
+    # last_dl_index not found
     except IndexError:
         _log.warn('%s loaded, but no most recent download index available, \
             starting from beginning of playlist' % file_log)
         update_history = True
 
+    # unknown error occured
     except Exception as e:
         _log.critical('%s: %s' % (type(e), e))
 
@@ -154,6 +159,7 @@ def process_history_data(playlist_title, dir, file_log):
                                         'write', history_downloads)
 
     return history_downloads, last_dl_index
+
 
 def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         keep_history=True, touch_files=True, debug=False):
@@ -197,7 +203,6 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         print('PLAYLIST_TITLE: ' + playlist_title) # debug
 
     # local variables for directories
-#    dir_downloads_root = os.path.join(dir_downloads, 'yt_dl_music')
     dir_downloads_root = dir_downloads
     dir_downloads_playlist = os.path.join(dir_downloads_root, playlist_title) # by default, playlist_title = ''
 
@@ -235,7 +240,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         'postprocessors': [
             {
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': preferredcodec,
+            # 'preferredcodec': preferredcodec,
             'preferredquality': '192',
             },
             {
@@ -284,5 +289,4 @@ if __name__ == '__main__':
     # enter your url into main function below and check main docstring for more info on parameters and functionality
     # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    dir_dl_jtara1 = '/home/j/Downloads/yt_dl_music'
     main(url, debug=True)
