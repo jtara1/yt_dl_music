@@ -18,6 +18,7 @@ The content of .\_dl\_history.txt will look something like this:
 
 By keeping track of this info, yt\_dl\_music saves time by skipping extracting info from each vid in a playlist every time.
 
+
 Deletes all 0 bytes files in folder with saved vids.
 
 ## Requirements
