@@ -15,6 +15,7 @@ import os
 import sys
 import logging
 import json
+import glob
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
 
@@ -161,6 +162,25 @@ def process_history_data(playlist_title, dir, file_log):
     return history_downloads, last_dl_index
 
 
+def delete_zero_bytes_files(path):
+    """Delete all 0 bytes files given a directory"""
+    if not os.path.isdir(path):
+        raise ValueError('Parameter path is not a directory.')
+    files = glob.glob(path + '/*')
+
+    # create our generator to find and remove zero byte files
+    generator = (os.remove(f) for f in files if (os.path.isfile(f)) and
+        os.path.getsize(f)==0)
+
+    try:
+        while True:
+            next(generator)
+    except StopIteration:
+        _log.info('Deleted zero bytes files')
+    except:
+        _log.error('func delete_zero_bytes_files error')
+
+
 def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         keep_history=True, touch_files=True, debug=False):
     """Use youtube_dl module to download vids from playlist & convert each to
@@ -240,7 +260,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         'postprocessors': [
             {
             'key': 'FFmpegExtractAudio',
-            # 'preferredcodec': preferredcodec,
+            'preferredcodec': preferredcodec,
             'preferredquality': '192',
             },
             {
@@ -283,6 +303,9 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
             history_log(dir_downloads_playlist, file_log, 'write', history_downloads)
         if debug:
             print('INDICES:\n' + str(indices))
+
+    # remove 0 bytes files leftover by youtube_dl
+    delete_zero_bytes_files(dir_downloads_playlist)
 
 
 if __name__ == '__main__':
