@@ -312,4 +312,4 @@ if __name__ == '__main__':
     # enter your url into main function below and check main docstring for more info on parameters and functionality
     # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    main(url, debug=True)
+    main(url, debug=False)

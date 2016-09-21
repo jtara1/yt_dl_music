@@ -18,23 +18,38 @@ The content of .\_dl\_history.txt will look something like this:
 
 By keeping track of this info, yt\_dl\_music saves time by skipping extracting info from each vid in a playlist every time.
 
+Deletes all 0 bytes files in folder with saved vids.
+
 ## Requirements
-- OS: Linux, OSX, Windows (only tested on Linux)
+
 - Python 2.7 (Python 3 untested)
 
 ## Dependencies
 - youtube-dl
 - colorama
 
+## Install
+
+    git clone https://github.com/jtara1/yt_dl_music
+
+    cd yt_dl_music
+
+    sudo pip install -r requirements.txt
+
+
 ## Usage
 call main(...) function with url of playlist/vid you wish to download
 
-examples:
+example:
 
     if __name__ == "__main__":
         url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
         main(url)
-        main(url, dir_downloads='/home/user/Downloads', keep_history=True, touch_files=True, debug=True)
+        main(url, dir_downloads='/home/user/Downloads', debug=True)
+
+#### Demo video
+
+https://www.youtube.com/watch?v=O7cTA19rAbo&feature=youtu.be
 
 ## main(...) docstring
     """Use youtube_dl module to download vids from playlist & convert each to
