@@ -1,7 +1,7 @@
 # yt\_dl\_music (Youtube Download Music)
 
 ## Description
-Built implementing youtube-dl as a library in Python to download vids and convert them to .mp3 including vid thumbnail and metadata.
+Built implementing [youtube-dl](https://github.com/rg3/youtube-dl) as a library in Python to download vids and convert them to an audio file including vid thumbnail and metadata from Youtube.
 The youtube-dl library will avoid downloading a file if a file with the same name already exists in the save location.
 
 When downloading vids from a playlist it'll keep track of indices of vids downloaded from specific playlist and write them in a dictionary to the
@@ -18,8 +18,9 @@ The content of .\_dl\_history.txt will look something like this:
 
 By keeping track of this info, yt\_dl\_music saves time by skipping extracting info from each vid in a playlist every time.
 
+After downloading completed, all files with size of 0 bytes are deleted in save folder. (My hotfix for youtube-dl leaving behind useless 0 bytes files)
+
 ## Requirements
-- OS: Linux, OSX, Windows (only tested on Linux)
 - Python 2.7 (Python 3 untested)
 
 ## Dependencies
