@@ -209,6 +209,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     ydl = youtube_dl.YoutubeDL()
     extract_info = ydl.extract_info(url_download, download=False, process=False) # process=False just gives playlist info without each individual video info included
 
+
     if debug:
         with open('extracted_info.txt', 'w') as f:
             f.write(str(extract_info))
@@ -242,6 +243,8 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     if is_playlist:
         history_downloads, last_dl_index = \
             process_history_data(playlist_title, dir_downloads_playlist, file_log)
+    else:
+        history_downloads, last_dl_index = {}, 0
 
     if debug:
         print('last_dl_index: %i' % last_dl_index)
