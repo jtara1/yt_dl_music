@@ -1,8 +1,14 @@
+# @Author: jtara1
+# @Date:
+# @Email:  jtara@tuta.io
+# @Last modified by:   jtara1
+# @Last modified time: 21-Sep-2016
 # -*- coding: utf-8 -*-
 """
 Created on Sat Aug  6 12:31:16 2016
 
 author: jtara1 (github)
+OS: Linux, should work on all OS's, needs testing
 Python 2.7
 
 """
@@ -76,7 +82,8 @@ def history_log(wdir=os.getcwd(), log_file='log_file.txt', mode='read', write_da
     :return: returns data read from or written to file (depending on mode)
     :rtype: dictionary
 
-    .. note:: Big thanks to https://github.com/rachmadaniHaryono for helping cleanup & fix security of this function.
+    .. note:: Big thanks to https://github.com/rachmadaniHaryono for helping
+        cleanup & fix security of this function.
     """
     mode_dict = {
         'read': 'r',
