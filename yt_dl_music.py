@@ -3,7 +3,6 @@
 Created on Sat Aug  6 12:31:16 2016
 
 author: jtara1 (github)
-OS: Linux, should work on all OS's, needs testing
 Python 2.7
 
 """
@@ -17,6 +16,7 @@ import logging
 import json
 import glob
 from parse_arguments import parse_arguments
+import unicodedata
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
 
@@ -209,7 +209,6 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     ydl = youtube_dl.YoutubeDL()
     extract_info = ydl.extract_info(url_download, download=False, process=False) # process=False just gives playlist info without each individual video info included
 
-
     if debug:
         with open('extracted_info.txt', 'w') as f:
             f.write(str(extract_info))
@@ -243,8 +242,6 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     if is_playlist:
         history_downloads, last_dl_index = \
             process_history_data(playlist_title, dir_downloads_playlist, file_log)
-    else:
-        history_downloads, last_dl_index = {}, 0
 
     if debug:
         print('last_dl_index: %i' % last_dl_index)
@@ -313,9 +310,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
 
 
 if __name__ == '__main__':
-    args = parse_arguments(['--help'] if len(sys.argv) == 1 else sys.argv[1:])
-    main(args.vid, args.dir, args.indices, args.keep_history, args.touch, args.debug)
-
+    # enter your url into main function below and check main docstring for more info on parameters and functionality
     # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    # main(url, debug=False)
+    main(url, debug=False)
