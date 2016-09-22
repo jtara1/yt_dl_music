@@ -16,6 +16,7 @@ import sys
 import logging
 import json
 import glob
+from parse_arguments import parse_arguments
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
 
@@ -309,7 +310,9 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
 
 
 if __name__ == '__main__':
-    # enter your url into main function below and check main docstring for more info on parameters and functionality
+    args = parse_arguments(['--help'] if len(sys.argv) == 1 else sys.argv[1:])
+    main(args.vid, args.dir, args.indices, args.keep_history, args.touch, args.debug)
+
     # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
     url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    main(url, debug=False)
+    # main(url, debug=False)
