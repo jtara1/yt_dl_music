@@ -1,9 +1,13 @@
+# @Author: jtara1
+# @Date:
+# @Email:  jtara@tuta.io
+# @Last modified by:   jtara1
+# @Last modified time: 21-Sep-2016
 # -*- coding: utf-8 -*-
 """
 Created on Sat Aug  6 12:31:16 2016
 
 author: jtara1 (github)
-OS: Linux, should work on all OS's, needs testing
 Python 2.7
 
 """
@@ -16,6 +20,7 @@ import sys
 import logging
 import json
 import glob
+import unicodedata
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
 
@@ -75,7 +80,8 @@ def history_log(wdir=os.getcwd(), log_file='log_file.txt', mode='read', write_da
     :return: returns data read from or written to file (depending on mode)
     :rtype: dictionary
 
-    .. note:: Big thanks to https://github.com/rachmadaniHaryono for helping cleanup & fix security of this function.
+    .. note:: Big thanks to https://github.com/rachmadaniHaryono for helping
+        cleanup & fix security of this function.
     """
     mode_dict = {
         'read': 'r',
@@ -181,6 +187,24 @@ def delete_zero_bytes_files(path):
         _log.error('func delete_zero_bytes_files error')
 
 
+def slugify(value, name_len_lim=255):
+    """Normalizes string, removes non-alpha characters
+
+    .. note:: func taken from https://github.com/HoverHell/RedditImageGrab
+        which was taken from Python Django
+    """
+    # taken from http://stackoverflow.com/a/295466
+    # truncate given filename if it's too long
+    if len(value) > name_len_lim:
+        value = value[:name_len_lim + 1]
+
+    # remove non alpha characters & normalize
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = str(re.sub(r'[^\w\s-]', '', value.decode('ascii')).strip())
+    # value = re.sub(r'[-\s]+', '-', value) # not replacing space with hypen
+    return value
+
+
 def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         keep_history=True, touch_files=True, debug=False):
     """Use youtube_dl module to download vids from playlist & convert each to
@@ -249,8 +273,10 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
 
     # check YoutubeDL.py in the youtube_dl library for more info
     preferredcodec = 'mp3'
+     # location & template for title of output file
+    outtmpl = os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s')
     ydl_opts = {
-        'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
+        'outtmpl': outtmpl
         'usetitle': True,
         'writethumbnail': True,             # needed if using postprocessing EmbedThumbnail
         'playliststart': last_dl_index + 1,
