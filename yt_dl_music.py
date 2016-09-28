@@ -4,14 +4,7 @@
 # @Last modified by:   jtara1
 # @Last modified time: 21-Sep-2016
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Aug  6 12:31:16 2016
 
-author: jtara1 (github)
-OS: Linux, should work on all OS's, needs testing
-Python 2.7
-
-"""
 
 from __future__ import unicode_literals
 from subprocess import call
@@ -190,7 +183,7 @@ def delete_zero_bytes_files(path):
 
 
 def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
-        keep_history=True, touch_files=True, debug=False):
+        extract_audio=True, keep_history=True, touch_files=True, debug=False):
     """Use youtube_dl module to download vids from playlist & convert each to
     an audio file with thumbnail & other metadata from youtube_dl
 
@@ -198,6 +191,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
     :param dir_downloads: directory to download playlists or vids to
     :param indices_to_download: indices (start index & end index) of playlist
         to download
+    :param extract_audio: only downloads audio if true
     :param keep_history: log data showing playlist title, indices downloaded, &
         playlist size to a file located in the folder where vids are downloaded
     :param touch_files: (Unix only) run sys command `touch` on each file
@@ -257,6 +251,22 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
 
     # check YoutubeDL.py in the youtube_dl library for more info
     preferredcodec = 'mp3'
+    postprocessors = [
+        {
+        'key': 'EmbedThumbnail', # embed thumbnail in file
+        },
+        {
+        'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
+        }
+    ]
+    if extract_audio: # only downloads audio
+        postprocessors.append(
+            {
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': preferredcodec,
+            'preferredquality': '192',
+            }
+        )
     ydl_opts = {
         'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
         'usetitle': True,

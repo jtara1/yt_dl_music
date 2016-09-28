@@ -10,8 +10,8 @@ def parse_arguments(args):
     parser.add_argument('vid', metavar='<youtube_vid>', help='Vid or playlist \
                         from Youtube')
     parser.add_argument('dir', metavar='<directory>', nargs='?',
-                        default=os.getcwd(), help='Dir to put downloaded \
-                        files in')
+                        default=os.path.join(os.getcwd(), 'yt_dl_music'),
+                        help='Dir to put downloaded files in')
 
     # optional args
     parser.add_argument('-t', '--touch', default=True, required=False,
@@ -20,6 +20,9 @@ def parse_arguments(args):
     parser.add_argument('-k', '--keep-history', default=True, required=False,
                         action='store_true', help='Keep track of videos of \
                         playlists downloaded in text file')
+    parser.add_argument('-x', '--extract-audio', default=True, required=False,
+                        help='Only download audio',
+                        action='store_true')
     parser.add_argument('-i', '--indices', default=[0, -1], required=False, type=int,
                         nargs=2, metavar='index',
                         help='Start (0 is first) & end (-1 is last) indices \
