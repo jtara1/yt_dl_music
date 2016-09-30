@@ -250,21 +250,21 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         print ('HISTORY_DOWNLOADS:\n' + str(history_downloads) + '\n' + str(type(history_downloads)))
 
     # check YoutubeDL.py in the youtube_dl library for more info
-    preferredcodec = 'mp3'
+    preferredcodec = 'm4a' # m4a seems to be consistantly available
     postprocessors = [
         {
-        'key': 'EmbedThumbnail', # embed thumbnail in file
+            'key': 'EmbedThumbnail', # embed thumbnail in file
         },
         {
-        'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
+            'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
         }
     ]
     if extract_audio: # only downloads audio
         postprocessors.append(
             {
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': preferredcodec,
-            'preferredquality': '192',
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': preferredcodec,
+                'preferredquality': '192',
             }
         )
     ydl_opts = {
@@ -275,19 +275,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         'playlistend': end_dl_index,        # stop downloading at this index
         'format': 'bestaudio/best',
         'ignoreerrors': True,               # allows continuation after errors such as Download Failed from deleted or removed videos
-        'postprocessors': [
-            {
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': preferredcodec,
-            'preferredquality': '192',
-            },
-            {
-            'key': 'EmbedThumbnail', # embed thumbnail in file
-            },
-            {
-            'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
-            }
-        ],
+        'postprocessors': postprocessors,
         'logger': MyLogger(),
         'progress_hooks': [my_hook],
     }
@@ -315,7 +303,9 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
                 if keep_history:
                     indices.append(vid[u'playlist_index'])
                 if touch_files:
-                    call(['touch', os.path.join(dir_downloads_playlist, vid[u'title'] + '.' + preferredcodec)]) # call command 'touch [VID_FILE_PATH]'
+                     # call command 'touch [VID_FILE_PATH]'
+                    call(['touch', os.path.join(dir_downloads_playlist,
+                        vid[u'title'] + '.' + preferredcodec)])
         if keep_history:
             history_downloads[playlist_title]['downloaded_indices'] = indices
             history_log(dir_downloads_playlist, file_log, 'write', history_downloads)
@@ -327,7 +317,16 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
 
 
 if __name__ == '__main__':
+    args = parse_arguments(['--help'] if len(sys.argv) == 1 else sys.argv[1:])
+
+    if args.download_video_audio:
+        extract_audio = False
+    else:
+        extract_audio = True
+
+    main(args.vid, args.dir, args.indices, extract_audio,
+        args.keep_history, args.touch, args.debug)
     # enter your url into main function below and check main docstring for more info on parameters and functionality
-    # jtara1's test playlist, for testing purposes, these 2 vids are short (< 1min)
-    url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
-    main(url, debug=False)
+    # jtara1's test playlist, for testing purposes, these 2 vids are short (< 3 mins)
+    url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd23ThY-ZYARtUeKsQA3oUDV-'
+    # main(url, debug=False)
