@@ -2,7 +2,6 @@
 # @Date:
 # @Email:  jtara@tuta.io
 # @Last modified by:   jtara1
-# @Last modified time: 21-Sep-2016
 # -*- coding: utf-8 -*-
 
 
@@ -14,10 +13,11 @@ import sys
 import logging
 import json
 import glob
-from parse_arguments import parse_arguments
 import unicodedata
 import colorama # supports cross platform, used to add color to text printed to console
 colorama.init()
+
+from tools.parse_arguments import parse_arguments
 
 
 py_version = sys.version_info[0]
@@ -147,8 +147,8 @@ def process_history_data(playlist_title, dir, file_log):
 
     # last_dl_index not found
     except IndexError:
-        _log.warn('%s loaded, but no most recent download index available, \
-            starting from beginning of playlist' % file_log)
+        _log.warn("""%s loaded, but no most recent download index available,
+            starting from beginning of playlist""" % file_log)
         update_history = True
 
     # unknown error occured
@@ -161,6 +161,48 @@ def process_history_data(playlist_title, dir, file_log):
                                         'write', history_downloads)
 
     return history_downloads, last_dl_index
+
+def get_ydl_options(dir_downloads_playlist, last_dl_index, end_dl_index,
+                    extract_audio=True, preferred_audio_codec='m4a',
+                    embed_metadata=True, embed_thumbnail=True):
+    """Get youtube-dl options"""
+    # check YoutubeDL.py in the youtube_dl library for more info
+    # m4a seems to be consistantly available
+    postprocessors = []
+    if embed_thumbnail:
+        postprocessors.append(
+            {
+                'key': 'EmbedThumbnail', # embed thumbnail in file
+            }
+        )
+    if embed_metadata:
+        postprocessors.append(
+            {
+                'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
+            }
+        )
+    if extract_audio: # only downloads audio
+        postprocessors.append(
+            {
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': preferred_audio_codec,
+                'preferredquality': '192',
+            }
+        )
+    ydl_opts = {
+        'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
+        'usetitle': True,
+        'writethumbnail': True,             # needed if using postprocessing EmbedThumbnail
+        'playliststart': last_dl_index + 1,
+        'playlistend': end_dl_index,        # stop downloading at this index
+        'format': 'bestaudio/best',
+        'ignoreerrors': True,               # allows continuation after errors such as Download Failed from deleted or removed videos
+        'postprocessors': postprocessors,
+        'logger': MyLogger(),
+        'progress_hooks': [my_hook],
+    }
+
+    return ydl_opts
 
 
 def delete_zero_bytes_files(path):
@@ -249,38 +291,11 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
         print('end_dl_index: %i' % end_dl_index)
         print ('HISTORY_DOWNLOADS:\n' + str(history_downloads) + '\n' + str(type(history_downloads)))
 
-    # check YoutubeDL.py in the youtube_dl library for more info
-    preferredcodec = 'm4a' # m4a seems to be consistantly available
-    postprocessors = [
-        {
-            'key': 'EmbedThumbnail', # embed thumbnail in file
-        },
-        {
-            'key': 'FFmpegMetadata', # embed metadata in file (uploader & upload date, I think)
-        }
-    ]
-    if extract_audio: # only downloads audio
-        postprocessors.append(
-            {
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': preferredcodec,
-                'preferredquality': '192',
-            }
-        )
-    ydl_opts = {
-        'outtmpl': os.path.join(dir_downloads_playlist, '%(title)s.%(ext)s'), # location & template for title of output file
-        'usetitle': True,
-        'writethumbnail': True,             # needed if using postprocessing EmbedThumbnail
-        'playliststart': last_dl_index + 1,
-        'playlistend': end_dl_index,        # stop downloading at this index
-        'format': 'bestaudio/best',
-        'ignoreerrors': True,               # allows continuation after errors such as Download Failed from deleted or removed videos
-        'postprocessors': postprocessors,
-        'logger': MyLogger(),
-        'progress_hooks': [my_hook],
-    }
+    preferred_audio_codec = 'm4a'
+    ydl_opts = get_ydl_options(dir_downloads_playlist, last_dl_index, end_dl_index,
+                                extract_audio=extract_audio,
+                                preferred_audio_codec=preferred_audio_codec)
 
-    # update params to ydl_opts set above, and extract info about video(es) and download them
 #    ydl = youtube_dl.YoutubeDL(ydl_opts)
     try:
         ydl.__init__(params = ydl_opts)
@@ -305,7 +320,7 @@ def main(url_download, dir_downloads=os.getcwd(), indices_to_download=[0, -1],
                 if touch_files:
                      # call command 'touch [VID_FILE_PATH]'
                     call(['touch', os.path.join(dir_downloads_playlist,
-                        vid[u'title'] + '.' + preferredcodec)])
+                        vid[u'title'] + '.' + preferred_audio_codec)])
         if keep_history:
             history_downloads[playlist_title]['downloaded_indices'] = indices
             history_log(dir_downloads_playlist, file_log, 'write', history_downloads)
