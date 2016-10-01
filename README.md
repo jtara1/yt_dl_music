@@ -21,13 +21,19 @@ By keeping track of this info, yt\_dl\_music saves time by skipping extracting i
 
 Deletes all 0 bytes files in folder with saved vids.
 
+#### Demo video
+
+https://www.youtube.com/watch?v=O7cTA19rAbo&feature=youtu.be
+
 ## Requirements
 
 - Python 2.7 (Python 3 untested)
 
+
 ## Dependencies
 - youtube-dl
 - colorama
+
 
 ## Install
 
@@ -39,18 +45,43 @@ Deletes all 0 bytes files in folder with saved vids.
 
 
 ## Usage
+
+#### Command Line
+
+    usage: yt_dl_music.py [-h] [-t] [-k] [-v] [-i index index] [-d]
+                          <youtube_vid> [<directory>]
+
+    Download video[s] from Youtube [playlist] with video thumbnail & Youtube
+    metadata. Then it converts each to audio files.
+
+    positional arguments:
+      <youtube_vid>         Vid or playlist from Youtube
+      <directory>           Dir to put downloaded files in
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -t, --touch           Call `touch` command on each file downloaded (Unix
+                            only)
+      -k, --keep-history    Keep track of videos of playlists downloaded in text
+                            file
+      -v, --download-video-audio
+                            Download video and audio of each Youtube video
+      -i index index, --indices index index
+                            Start (0 is first) & end (-1 is last) indices to
+                            indicate range of vids of a playlist to download
+      -d, --debug           Print various variables as data is processed
+
+
+#### Submodule
+
 call main(...) function with url of playlist/vid you wish to download
 
 example:
 
     if __name__ == "__main__":
-        url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd20gA7y6XHFOUZy0xUOpVR8_'
+        url = 'https://www.youtube.com/playlist?list=PLQRGmPzigd23ThY-ZYARtUeKsQA3oUDV-'
         main(url)
-        main(url, dir_downloads='/home/user/Downloads', debug=True)
 
-#### Demo video
-
-https://www.youtube.com/watch?v=O7cTA19rAbo&feature=youtu.be
 
 ## main(...) docstring
     """Use youtube_dl module to download vids from playlist & convert each to
