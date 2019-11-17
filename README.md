@@ -1,5 +1,13 @@
 # yt\_dl\_music (Youtube Download Music)
 
+## Deprecated
+
+use youtube-dl
+
+`pip install youtube-dl`
+
+`youtube-dl -x https://www.youtube.com/my-playlist`
+
 ## Description
 Built implementing [youtube-dl](https://github.com/rg3/youtube-dl) as a library in Python to download vids and convert them to an audio file including vid thumbnail and metadata from Youtube.
 The youtube-dl library will avoid downloading a file if a file with the same name already exists in the save location.
